@@ -105,7 +105,7 @@ public class WithdrawalFragment extends BaseFragment implements View.OnClickList
                 TransactionHistory transactionHistory = new TransactionHistory();
                 transactionHistory.amount = Double.parseDouble(amount);
                 transactionHistory.type = TransactionHistory.TYPE_WITHDRAW;
-                transactionHistory.description = String.format(Locale.getDefault(), "Withdrawal to %s", amount, bank);
+                transactionHistory.description = String.format(Locale.getDefault(), "Withdrawal to %s", bank, amount);
                 transactionHistory.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
                 appDatabase.transactionsDao().insertObject(transactionHistory);
             });

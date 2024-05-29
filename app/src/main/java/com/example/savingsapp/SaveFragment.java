@@ -23,11 +23,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple {@link Fragment} subclass for saving transaction data.
  */
 public class SaveFragment extends BaseFragment implements View.OnClickListener {
+    // Context for accessing resources and database
     Context context;
 
+    // UI components
     Button saveBtn;
     TextInputEditText amountInput;
     TextInputEditText cardNumberInput;
@@ -35,31 +37,40 @@ public class SaveFragment extends BaseFragment implements View.OnClickListener {
     TextInputEditText cvvInput;
     TextInputEditText expiryInput;
 
+    // Default constructor required for fragment subclasses
     public SaveFragment() {
         // Required empty public constructor
     }
+
+    // Static method to create a new instance of SaveFragment with a given context
     public static SaveFragment newInstance(Context context) {
         SaveFragment fragment = new SaveFragment();
         fragment.context = context;
         return fragment;
     }
 
+    // Called when the fragment is created
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Initialize the app database with the given context
         initAppDb(context);
     }
 
+    // Called to create the view hierarchy associated with the fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_save, container, false);
+        // Initialize the UI components
         initViews(view);
         return view;
     }
 
-    void initViews(View view){
+    // Method to initialize the UI components
+    void initViews(View view) {
+        // Initialize save button and set click listener
         saveBtn = view.findViewById(R.id.save_btn);
         amountInput = view.findViewById(R.id.amount_input);
         cardNumberInput = view.findViewById(R.id.card_number_input);
@@ -69,36 +80,44 @@ public class SaveFragment extends BaseFragment implements View.OnClickListener {
         saveBtn.setOnClickListener(this);
     }
 
-    void saveData(){
+    // Method to save data to the database
+    void saveData() {
+        // Retrieve input values
         String amount = amountInput.getText().toString();
         String cardNumber = cardNumberInput.getText().toString();
         String name = nameInput.getText().toString();
         String cvv = cvvInput.getText().toString();
         String expiry = expiryInput.getText().toString();
 
-        if(amount.isEmpty() || cardNumber.isEmpty() || name.isEmpty() || cvv.isEmpty() || expiry.isEmpty()){
-            showToast(context,"All fields are required");
+        // Validate input values
+        if (amount.isEmpty() || cardNumber.isEmpty() || name.isEmpty() || cvv.isEmpty() || expiry.isEmpty()) {
+            showToast(context, "All fields are required");
             return;
         }
 
-        if(!isValidExpiryDate(expiry)){
-            showToast(context,"Invalid Expiry date");
+        // Validate expiry date
+        if (!isValidExpiryDate(expiry)) {
+            showToast(context, "Invalid Expiry date");
             return;
         }
 
-        //get current date
+        // Get current date
         String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         String description = "Deposit into savings account";
-        //save data to db
+
+        // Save data to the database in the background
         runInBackground(() -> {
-            appDatabase.transactionsDao().insert(1, Double.parseDouble(amount),date, TransactionHistory.TYPE_DEPOSIT, description );
+            // Insert transaction into the database
+            appDatabase.transactionsDao().insert(1, Double.parseDouble(amount), date, TransactionHistory.TYPE_DEPOSIT, description);
+            // Update user balance in the database
             appDatabase.userDao().updateUserBalanceByAmount(1, Double.parseDouble(amount));
             Log.d("SaveFragmentData", "Data saved");
         });
 
-        showToast(context,"Savings was successful");
+        // Show success message
+        showToast(context, "Savings was successful");
 
-        //clear input fields
+        // Clear input fields
         amountInput.setText("");
         cardNumberInput.setText("");
         nameInput.setText("");
@@ -106,15 +125,17 @@ public class SaveFragment extends BaseFragment implements View.OnClickListener {
         expiryInput.setText("");
     }
 
+    // Handle click events for the save button
     @Override
     public void onClick(View v) {
-        if(v.getId() == R.id.save_btn){
+        if (v.getId() == R.id.save_btn) {
             saveData();
         }
     }
 
+    // Method to validate the expiry date
     private boolean isValidExpiryDate(String expiryDate) {
-        // Regex to validate expiry date with a forward slash (e.g., "MM/YY")
+        // Regex to validate expiry date format (e.g., "MM/YY")
         String expiryPattern = "^(0[1-9]|1[0-2])/(\\d{2})$";
         if (TextUtils.isEmpty(expiryDate) || !Pattern.matches(expiryPattern, expiryDate)) {
             return false;
